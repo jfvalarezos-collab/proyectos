@@ -51,12 +51,12 @@ router.post('/attempt', (req, res) => {
     .prepare('SELECT viewed FROM content_progress WHERE session_id = ? AND participant_token = ?')
     .get(session.id, participantToken);
   if (!progress?.viewed) {
-    return res.status(403).json({ error: 'Debes completar la visualización del contenido antes del quiz' });
+    return res.status(403).json({ error: 'Debes completar la visualización del contenido antes de la evaluación' });
   }
 
   const previousAttempts = attemptsFor(session.id, participantToken);
   if (previousAttempts.some((a) => a.aprobado)) {
-    return res.status(403).json({ error: 'Ya aprobaste el quiz de esta sesión' });
+    return res.status(403).json({ error: 'Ya aprobaste la evaluación de esta sesión' });
   }
   if (previousAttempts.length >= MAX_INTENTOS) {
     return res.status(403).json({ error: 'Se agotaron los 3 intentos permitidos', bloqueado: true });

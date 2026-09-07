@@ -179,7 +179,7 @@ export default function SessionCreate() {
           </section>
 
           <section>
-            <h2 className="text-sm font-medium text-slate-700 mb-2">Quiz ({numPreguntas} preguntas)</h2>
+            <h2 className="text-sm font-medium text-slate-700 mb-2">Evaluación ({numPreguntas} preguntas)</h2>
             <div className="flex gap-3 mb-3">
               {[5, 10].map((n) => (
                 <label

@@ -68,7 +68,7 @@ export default function Quiz({ session, qrToken, participantToken, onAprobado, o
   return (
     <div className="space-y-5">
       <p className="text-sm text-slate-500">
-        Paso 2 de 5 · Responde las {totalPreguntas} preguntas (mínimo {umbralPct}% para aprobar).
+        Paso 2 de 5 · Evaluación: responde las {totalPreguntas} preguntas (mínimo {umbralPct}% para aprobar).
       </p>
 
       {session.questions.map((q, qIndex) => (

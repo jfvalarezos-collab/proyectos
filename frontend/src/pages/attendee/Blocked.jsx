@@ -5,7 +5,7 @@ export default function Blocked({ totalPreguntas }) {
       <div className="text-4xl">🚫</div>
       <p className="text-lg font-semibold text-red-600">NO ACEPTABLE</p>
       <p className="text-sm text-slate-600">
-        Agotaste los 3 intentos permitidos sin alcanzar el {umbralPct}% requerido en el quiz.
+        Agotaste los 3 intentos permitidos sin alcanzar el {umbralPct}% requerido en la evaluación.
       </p>
       <p className="text-sm text-slate-500">
         Debes repetir la capacitación completa. Contacta al facilitador para coordinar una nueva sesión.

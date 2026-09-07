@@ -52,7 +52,7 @@ router.post('/', (req, res) => {
     const umbralPct = session.num_preguntas === 10 ? 70 : 60;
     return res
       .status(403)
-      .json({ error: `No hay un intento de quiz aprobado (≥${umbralPct}%) para este participante` });
+      .json({ error: `No hay un intento de evaluación aprobado (≥${umbralPct}%) para este participante` });
   }
 
   const id = uuid();

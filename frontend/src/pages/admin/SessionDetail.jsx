@@ -179,7 +179,9 @@ export default function SessionDetail() {
           />
 
           <div>
-            <h2 className="text-sm font-medium text-slate-700 mb-2">Quiz ({session.num_preguntas} preguntas)</h2>
+            <h2 className="text-sm font-medium text-slate-700 mb-2">
+              Evaluación ({session.num_preguntas} preguntas)
+            </h2>
             <QuestionEditor preguntas={preguntas} onChange={setPreguntas} />
           </div>
 
