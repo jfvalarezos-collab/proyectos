@@ -5,8 +5,16 @@ const TIPOS = [
   { value: 'video', label: 'Video grabado (enlace: YouTube, Vimeo, Drive, OneDrive…)' },
   { value: 'presentacion', label: 'Enlace externo de presentación (Prezi, Canva, Genially, Slides…)' },
   { value: 'texto', label: 'Texto / documento' },
-  { value: 'imagenes', label: 'Imágenes de diapositivas' },
+  { value: 'imagenes', label: 'Presentaciones en Prezi/PowerPoint' },
 ];
+
+// Documentos (PDF/PPTX) y videos (presentaciones exportadas como .mp4/.wmv, grabaciones de
+// NotebookLM, etc.) comparten el mismo input de "subir archivo completo" — sin esto en el
+// accept, el selector de Windows los oculta aunque sí existan en la carpeta.
+const DOCUMENTO_ACCEPT =
+  '.pdf,.pptx,.mp4,.wmv,.mov,.avi,' +
+  'application/pdf,application/vnd.openxmlformats-officedocument.presentationml.presentation,' +
+  'video/mp4,video/x-ms-wmv,video/quicktime,video/x-msvideo';
 
 export default function MaterialEditor({ materialTipo, materialPayload, onChange }) {
   const [uploadingLabel, setUploadingLabel] = useState('');
@@ -16,7 +24,7 @@ export default function MaterialEditor({ materialTipo, materialPayload, onChange
     onChange(materialTipo, { ...materialPayload, ...patch });
   }
 
-  async function handleFileUpload(e, multiple) {
+  async function handleFileUpload(e, target) {
     const files = Array.from(e.target.files ?? []);
     if (files.length === 0) return;
     const isPptx = files.some((f) => /\.pptx$/i.test(f.name));
@@ -28,7 +36,7 @@ export default function MaterialEditor({ materialTipo, materialPayload, onChange
       const formData = new FormData();
       files.forEach((f) => formData.append('archivos', f));
       const { files: uploaded } = await api.uploadFiles(formData);
-      if (multiple) {
+      if (target === 'imagenes') {
         setPayload({ imagenes: [...(materialPayload.imagenes || []), ...uploaded.map((f) => f.url)] });
       } else {
         setPayload({ archivoUrl: uploaded[0].url });
@@ -91,14 +99,11 @@ export default function MaterialEditor({ materialTipo, materialPayload, onChange
           />
           <div>
             <label className="block text-xs text-slate-500 mb-1">
-              O sube un PDF o una presentación de PowerPoint (.pptx) — se convierte a PDF
-              automáticamente (opcional)
+              O sube un PDF, una presentación de PowerPoint (.pptx) o un video (.mp4, .wmv,
+              .mov, .avi) — el .pptx se convierte a PDF automáticamente, el video se guarda tal
+              cual (opcional)
             </label>
-            <input
-              type="file"
-              accept=".pdf,.pptx,application/pdf,application/vnd.openxmlformats-officedocument.presentationml.presentation"
-              onChange={(e) => handleFileUpload(e, false)}
-            />
+            <input type="file" accept={DOCUMENTO_ACCEPT} onChange={(e) => handleFileUpload(e, 'documento')} />
             {materialPayload.archivoUrl && (
               <p className="text-xs text-emerald-600 mt-1">Documento cargado: {materialPayload.archivoUrl}</p>
             )}
@@ -107,23 +112,56 @@ export default function MaterialEditor({ materialTipo, materialPayload, onChange
       )}
 
       {materialTipo === 'imagenes' && (
-        <div className="space-y-2">
-          <input type="file" accept="image/*" multiple onChange={(e) => handleFileUpload(e, true)} />
+        <div className="space-y-3">
           <div>
-            <label className="block text-xs text-slate-500 mb-1">Segundos mínimos por diapositiva</label>
-            <input
-              type="number"
-              min="1"
-              className="w-32 border border-slate-300 rounded-lg px-3 py-2"
-              value={materialPayload.segundosPorDiapositiva || 3}
-              onChange={(e) => setPayload({ segundosPorDiapositiva: Number(e.target.value) })}
-            />
+            <label className="block text-xs text-slate-500 mb-1">
+              Sube tu presentación completa: .pptx, .pdf, o un video (.mp4, .wmv, .mov, .avi —
+              por ejemplo una presentación exportada como video, o generada en NotebookLM). El
+              .pptx se convierte a PDF automáticamente; el video se guarda tal cual
+            </label>
+            <input type="file" accept={DOCUMENTO_ACCEPT} onChange={(e) => handleFileUpload(e, 'documento')} />
+            {materialPayload.archivoUrl && (
+              <p className="text-xs text-emerald-600 mt-1">Presentación cargada: {materialPayload.archivoUrl}</p>
+            )}
+          </div>
+
+          {materialPayload.archivoUrl && (
+            <div>
+              <label className="block text-xs text-slate-500 mb-1">
+                Minutos estimados de lectura — se usa para exigir que el asistente permanezca
+                viendo el contenido antes de continuar.
+              </label>
+              <input
+                type="number"
+                min="1"
+                className="w-32 border border-slate-300 rounded-lg px-3 py-2"
+                value={materialPayload.duracionEstimadaMin || ''}
+                onChange={(e) => setPayload({ duracionEstimadaMin: Number(e.target.value) })}
+              />
+            </div>
+          )}
+
+          <div>
+            <label className="block text-xs text-slate-500 mb-1">
+              O, en vez del archivo completo, sube imágenes sueltas de las diapositivas (opcional)
+            </label>
+            <input type="file" accept="image/*" multiple onChange={(e) => handleFileUpload(e, 'imagenes')} />
           </div>
           {materialPayload.imagenes?.length > 0 && (
-            <div className="flex gap-2 flex-wrap">
-              {materialPayload.imagenes.map((url, i) => (
-                <img key={i} src={url} alt={`Diapositiva ${i + 1}`} className="h-20 rounded border" />
-              ))}
+            <div>
+              <label className="block text-xs text-slate-500 mb-1">Segundos mínimos por diapositiva</label>
+              <input
+                type="number"
+                min="1"
+                className="w-32 border border-slate-300 rounded-lg px-3 py-2"
+                value={materialPayload.segundosPorDiapositiva || 3}
+                onChange={(e) => setPayload({ segundosPorDiapositiva: Number(e.target.value) })}
+              />
+              <div className="flex gap-2 flex-wrap mt-2">
+                {materialPayload.imagenes.map((url, i) => (
+                  <img key={i} src={url} alt={`Diapositiva ${i + 1}`} className="h-20 rounded border" />
+                ))}
+              </div>
             </div>
           )}
         </div>

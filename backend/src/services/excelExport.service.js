@@ -1,10 +1,8 @@
 import ExcelJS from 'exceljs';
 
 const ACTIVIDAD_LABELS = {
-  induccion: 'Inducción',
-  reinduccion: 'Reinducción',
+  induccion_reinduccion: 'Inducción/Reinducción',
   charla_seguridad: 'Charla de seguridad',
-  reuniones_sst: 'Reuniones de SST / Operativas',
   seminario_taller: 'Seminario / Taller / Curso',
   capacitacion_cargo: 'Capacitación especifica al cargo',
   otra: 'Otra',
@@ -14,7 +12,7 @@ const MATERIAL_LABELS = {
   video: 'Video (enlace)',
   presentacion: 'Enlace de presentación',
   texto: 'Texto / documento',
-  imagenes: 'Imágenes de diapositivas',
+  imagenes: 'Presentaciones en Prezi/PowerPoint',
 };
 
 function mark(actividadTipo, key) {
@@ -106,21 +104,17 @@ export async function buildAsistenciaWorkbook({ session, questions, attendees })
   ws.getCell('J11').value = 'TEMAS TRATADOS';
   ['A11', 'J11'].forEach((c) => styleTitle(ws.getCell(c), { size: 9 }));
 
-  const actividadRows = [
-    ['A12:I12', 'induccion'],
-    ['A13:I13', 'reinduccion'],
-    ['A14:I14', 'charla_seguridad'],
-    ['A15:I15', 'reuniones_sst'],
-    ['A16:I16', 'seminario_taller'],
-    ['A17:I17', 'capacitacion_cargo'],
-    ['A18:I18', 'otra'],
-  ];
-  for (const [range, key] of actividadRows) {
-    ws.mergeCells(range);
+  // El bloque de actividades ocupa las filas 12 a 18 del formato; si hay menos opciones que
+  // filas, las sobrantes quedan vacías para no descuadrar el merge de TEMAS TRATADOS (K12:AA18)
+  // ni la tabla de asistentes que arranca en la fila 20.
+  const ACTIVIDAD_FIRST_ROW = 12;
+  Object.keys(ACTIVIDAD_LABELS).forEach((key, i) => {
+    const r = ACTIVIDAD_FIRST_ROW + i;
+    ws.mergeCells(`A${r}:I${r}`);
     const label = ACTIVIDAD_LABELS[key] + (key === 'otra' && session.actividad_otra_detalle ? ` (${session.actividad_otra_detalle})` : '');
-    ws.getCell(range.split(':')[0]).value = `${mark(session.actividad_tipo, key)} ${label}`;
-    ws.getCell(range.split(':')[0]).alignment = { vertical: 'middle', horizontal: 'left' };
-  }
+    ws.getCell(`A${r}`).value = `${mark(session.actividad_tipo, key)} ${label}`;
+    ws.getCell(`A${r}`).alignment = { vertical: 'middle', horizontal: 'left' };
+  });
 
   ws.mergeCells('K12:AA18');
   ws.getCell('K12').value = session.temas_tratados || '';

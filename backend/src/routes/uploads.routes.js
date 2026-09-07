@@ -9,7 +9,7 @@ import { convertPptxToPdf } from '../services/pptxConvert.service.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const uploadsDir = path.join(__dirname, '..', '..', 'uploads');
 
-const ALLOWED = new Set(['.pdf', '.png', '.jpg', '.jpeg', '.webp', '.pptx']);
+const ALLOWED = new Set(['.pdf', '.png', '.jpg', '.jpeg', '.webp', '.pptx', '.mp4', '.wmv', '.mov', '.avi']);
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadsDir),
@@ -21,12 +21,13 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  // Las presentaciones .pptx con imágenes pueden pesar bastante más que un PDF simple.
-  limits: { fileSize: 50 * 1024 * 1024 },
+  // Los videos (presentaciones exportadas como .mp4/.wmv, grabaciones de NotebookLM, etc.)
+  // pesan mucho más que un PDF o una imagen — se sirven y guardan tal cual, sin conversión.
+  limits: { fileSize: 500 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
     if (!ALLOWED.has(ext)) {
-      return cb(new Error('Tipo de archivo no permitido (solo PDF, PPTX o imágenes)'));
+      return cb(new Error('Tipo de archivo no permitido (solo PDF, PPTX, imágenes o video: mp4/wmv/mov/avi)'));
     }
     cb(null, true);
   },

@@ -5,10 +5,8 @@ import MaterialEditor from '../../components/MaterialEditor.jsx';
 import QuestionEditor, { emptyQuestions } from '../../components/QuestionEditor.jsx';
 
 const ACTIVIDADES = [
-  { value: 'induccion', label: 'Inducción' },
-  { value: 'reinduccion', label: 'Reinducción' },
+  { value: 'induccion_reinduccion', label: 'Inducción/Reinducción' },
   { value: 'charla_seguridad', label: 'Charla de seguridad' },
-  { value: 'reuniones_sst', label: 'Reuniones de SST / Operativas' },
   { value: 'seminario_taller', label: 'Seminario / Taller / Curso' },
   { value: 'capacitacion_cargo', label: 'Capacitación específica al cargo' },
   { value: 'otra', label: 'Otra' },
@@ -26,7 +24,7 @@ export default function SessionCreate() {
     ciudad: '',
     lugar: '',
     fecha: todayDDMMAAAA(),
-    actividadTipo: 'induccion',
+    actividadTipo: 'induccion_reinduccion',
     actividadOtraDetalle: '',
     temasTratados: '',
     facilitadorNombre: '',
