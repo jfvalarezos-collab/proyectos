@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { api } from '../../lib/api.js';
-import MaterialEditor from '../../components/MaterialEditor.jsx';
+import MaterialEditor, { materialTieneContenido } from '../../components/MaterialEditor.jsx';
 import QuestionEditor from '../../components/QuestionEditor.jsx';
 
 export default function SessionDetail() {
@@ -48,6 +48,13 @@ export default function SessionDetail() {
     setSaving(true);
     setSavedMsg('');
     setError('');
+    if (!materialTieneContenido(session.material_tipo, session.material_payload)) {
+      setError(
+        'Falta cargar el material de capacitación (enlace, archivo o texto) — sin esto el trabajador ve una pantalla vacía y nunca puede continuar'
+      );
+      setSaving(false);
+      return;
+    }
     try {
       await api.updateSession(id, {
         formatoCodigo: session.formato_codigo,
@@ -76,7 +83,11 @@ export default function SessionDetail() {
     const mensaje =
       `Hola! Te comparto el link para completar "${tema}". ` +
       `Ábrelo desde tu celular, sigue los pasos y firma al final:\n${qr.url}`;
-    return `https://wa.me/?text=${encodeURIComponent(mensaje)}`;
+    // wa.me exige un número en la ruta (wa.me/<numero>) para funcionar de forma confiable;
+    // sin número no está documentado y falla en algunos navegadores/plataformas. El formato
+    // que sí soporta oficialmente "sin destinatario fijo" (abre el selector de contacto) tanto
+    // en la app móvil como en WhatsApp Web/Desktop es api.whatsapp.com/send?text=.
+    return `https://api.whatsapp.com/send?text=${encodeURIComponent(mensaje)}`;
   }
 
   async function handleExport() {

@@ -16,6 +16,22 @@ const DOCUMENTO_ACCEPT =
   'application/pdf,application/vnd.openxmlformats-officedocument.presentationml.presentation,' +
   'video/mp4,video/x-ms-wmv,video/quicktime,video/x-msvideo';
 
+// Una sesión guardada sin contenido real (ej. tipo "video" sin URL) deja al trabajador viendo
+// una pantalla vacía sin nada que marque el contenido como visto — usado por SessionCreate y
+// SessionDetail para bloquear el guardado antes de que eso llegue a publicarse.
+export function materialTieneContenido(materialTipo, materialPayload = {}) {
+  if (materialTipo === 'video' || materialTipo === 'presentacion') {
+    return !!materialPayload.url?.trim();
+  }
+  if (materialTipo === 'texto') {
+    return !!materialPayload.texto?.trim() || !!materialPayload.archivoUrl;
+  }
+  if (materialTipo === 'imagenes') {
+    return !!materialPayload.archivoUrl || materialPayload.imagenes?.length > 0;
+  }
+  return false;
+}
+
 export default function MaterialEditor({ materialTipo, materialPayload, onChange }) {
   const [uploadingLabel, setUploadingLabel] = useState('');
   const [uploadError, setUploadError] = useState('');

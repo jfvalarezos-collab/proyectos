@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { api } from '../../lib/api.js';
-import MaterialEditor from '../../components/MaterialEditor.jsx';
+import MaterialEditor, { materialTieneContenido } from '../../components/MaterialEditor.jsx';
 import QuestionEditor, { emptyQuestions } from '../../components/QuestionEditor.jsx';
 
 const ACTIVIDADES = [
@@ -61,6 +61,12 @@ export default function SessionCreate() {
     }
     if (!preguntasValidas()) {
       setError(`Completa el texto y las 4 opciones de las ${numPreguntas} preguntas`);
+      return;
+    }
+    if (!materialTieneContenido(materialTipo, materialPayload)) {
+      setError(
+        'Falta cargar el material de capacitación (enlace, archivo o texto) — sin esto el trabajador ve una pantalla vacía y nunca puede continuar'
+      );
       return;
     }
 
