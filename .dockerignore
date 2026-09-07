@@ -1,0 +1,10 @@
+**/node_modules
+frontend/dist
+backend/data
+backend/uploads/*
+!backend/uploads/.gitkeep
+backend/.env
+.git
+.claude
+*.log
+*.xlsx
