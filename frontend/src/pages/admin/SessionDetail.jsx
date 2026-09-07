@@ -179,7 +179,7 @@ export default function SessionDetail() {
           />
 
           <div>
-            <h2 className="text-sm font-medium text-slate-700 mb-2">Quiz (5 preguntas)</h2>
+            <h2 className="text-sm font-medium text-slate-700 mb-2">Quiz ({session.num_preguntas} preguntas)</h2>
             <QuestionEditor preguntas={preguntas} onChange={setPreguntas} />
           </div>
 
@@ -251,7 +251,7 @@ export default function SessionDetail() {
                 <li key={a.id} className="text-sm border border-slate-100 rounded-lg p-2">
                   <p className="font-medium text-slate-800">{a.nombre}</p>
                   <p className="text-slate-500">
-                    {a.cedula} · {a.cargo} · {a.aciertos_aprobados}/5
+                    {a.cedula} · {a.cargo} · {a.aciertos_aprobados}/{session.num_preguntas}
                   </p>
                 </li>
               ))}

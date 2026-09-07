@@ -2,8 +2,8 @@ function emptyQuestion() {
   return { texto: '', opciones: ['', '', '', ''], respuestaCorrecta: 0 };
 }
 
-export function emptyQuestions() {
-  return Array.from({ length: 5 }, emptyQuestion);
+export function emptyQuestions(count = 5) {
+  return Array.from({ length: count }, emptyQuestion);
 }
 
 export default function QuestionEditor({ preguntas, onChange }) {

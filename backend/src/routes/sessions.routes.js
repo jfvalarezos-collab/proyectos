@@ -28,15 +28,22 @@ router.post('/', (req, res) => {
     return res.status(400).json({ error: 'ciudad, lugar, fecha y actividadTipo son requeridos' });
   }
 
+  // La evaluación solo admite dos modalidades fijas: 5 o 10 preguntas. Si no se envía,
+  // se asume 5 (compatibilidad con clientes viejos).
+  const numPreguntas = b.numPreguntas === undefined ? 5 : Number(b.numPreguntas);
+  if (![5, 10].includes(numPreguntas)) {
+    return res.status(400).json({ error: 'numPreguntas debe ser 5 o 10' });
+  }
+
   const id = uuid();
   const qrToken = uuid();
 
   db.prepare(
     `INSERT INTO sessions
       (id, formato_codigo, ciudad, lugar, fecha, actividad_tipo, actividad_otra_detalle,
-       temas_tratados, material_tipo, material_payload, facilitador_nombre, qr_token)
+       temas_tratados, material_tipo, material_payload, facilitador_nombre, qr_token, num_preguntas)
      VALUES (@id, @formato_codigo, @ciudad, @lugar, @fecha, @actividad_tipo, @actividad_otra_detalle,
-       @temas_tratados, @material_tipo, @material_payload, @facilitador_nombre, @qr_token)`
+       @temas_tratados, @material_tipo, @material_payload, @facilitador_nombre, @qr_token, @num_preguntas)`
   ).run({
     id,
     formato_codigo: b.formatoCodigo || 'FT-SST-02',
@@ -50,14 +57,15 @@ router.post('/', (req, res) => {
     material_payload: JSON.stringify(b.materialPayload || {}),
     facilitador_nombre: b.facilitadorNombre || '',
     qr_token: qrToken,
+    num_preguntas: numPreguntas,
   });
 
-  // 5 preguntas vacías por defecto, listas para editar
+  // Preguntas vacías por defecto (5 o 10 según la modalidad elegida), listas para editar
   const insertQ = db.prepare(
     `INSERT INTO questions (id, session_id, orden, texto, opciones, respuesta_correcta)
      VALUES (@id, @session_id, @orden, '', '["","","",""]', 0)`
   );
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < numPreguntas; i++) {
     insertQ.run({ id: uuid(), session_id: id, orden: i });
   }
 

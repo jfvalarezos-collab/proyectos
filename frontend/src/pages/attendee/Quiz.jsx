@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { api } from '../../lib/api.js';
 
 export default function Quiz({ session, qrToken, participantToken, onAprobado, onBloqueado }) {
+  const totalPreguntas = session.questions.length;
+  const umbralPct = totalPreguntas === 10 ? 70 : 60;
   const [respuestas, setRespuestas] = useState(Array(session.questions.length).fill(null));
   const [enviando, setEnviando] = useState(false);
   const [resultado, setResultado] = useState(null);
@@ -47,7 +49,8 @@ export default function Quiz({ session, qrToken, participantToken, onAprobado, o
     return (
       <div className="space-y-4 text-center">
         <p className="text-lg font-semibold text-amber-600">
-          {resultado.aciertos}/{resultado.totalPreguntas} — No alcanzaste el 60% requerido
+          {resultado.aciertos}/{resultado.totalPreguntas} — No alcanzaste el{' '}
+          {resultado.totalPreguntas === 10 ? 70 : 60}% requerido
         </p>
         <p className="text-sm text-slate-600">
           Te quedan {resultado.intentosRestantes} intento(s). Vuelve a intentarlo.
@@ -64,7 +67,9 @@ export default function Quiz({ session, qrToken, participantToken, onAprobado, o
 
   return (
     <div className="space-y-5">
-      <p className="text-sm text-slate-500">Paso 2 de 5 · Responde las 5 preguntas (mínimo 60% para aprobar).</p>
+      <p className="text-sm text-slate-500">
+        Paso 2 de 5 · Responde las {totalPreguntas} preguntas (mínimo {umbralPct}% para aprobar).
+      </p>
 
       {session.questions.map((q, qIndex) => (
         <div key={q.id}>

@@ -18,6 +18,13 @@ db.exec('PRAGMA foreign_keys = ON');
 const schema = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf-8');
 db.exec(schema);
 
+// Migración aditiva para bases de datos creadas antes de que existiera esta columna:
+// CREATE TABLE IF NOT EXISTS no altera tablas ya existentes.
+const sessionCols = db.prepare("PRAGMA table_info(sessions)").all();
+if (!sessionCols.some((c) => c.name === 'num_preguntas')) {
+  db.exec('ALTER TABLE sessions ADD COLUMN num_preguntas INTEGER NOT NULL DEFAULT 5');
+}
+
 // Pequeño helper para imitar la API de transacciones de better-sqlite3, usada en las rutas.
 db.transaction = (fn) => (...args) => {
   db.exec('BEGIN');

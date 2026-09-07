@@ -49,7 +49,10 @@ router.post('/', (req, res) => {
     .all(session.id, participantToken);
   const attemptAprobado = attempts.find((a) => a.aprobado);
   if (!attemptAprobado) {
-    return res.status(403).json({ error: 'No hay un intento de quiz aprobado (≥60%) para este participante' });
+    const umbralPct = session.num_preguntas === 10 ? 70 : 60;
+    return res
+      .status(403)
+      .json({ error: `No hay un intento de quiz aprobado (≥${umbralPct}%) para este participante` });
   }
 
   const id = uuid();

@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS sessions (
   facilitador_nombre TEXT NOT NULL DEFAULT '',
   qr_token TEXT NOT NULL UNIQUE,
   published INTEGER NOT NULL DEFAULT 1,
+  num_preguntas INTEGER NOT NULL DEFAULT 5 CHECK (num_preguntas IN (5, 10)),
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

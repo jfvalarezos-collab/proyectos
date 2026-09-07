@@ -4,15 +4,16 @@ import db from '../db/db.js';
 
 const router = Router({ mergeParams: true });
 
-// Reemplaza las 5 preguntas de la sesión de una sola vez (así se edita el editor completo).
+// Reemplaza las preguntas de la sesión de una sola vez (así se edita el editor completo).
+// La cantidad exigida depende de la modalidad elegida al crear la sesión (5 o 10).
 router.put('/', (req, res) => {
   const sessionId = req.params.id;
-  const session = db.prepare('SELECT id FROM sessions WHERE id = ?').get(sessionId);
+  const session = db.prepare('SELECT id, num_preguntas FROM sessions WHERE id = ?').get(sessionId);
   if (!session) return res.status(404).json({ error: 'Sesión no encontrada' });
 
   const preguntas = Array.isArray(req.body?.preguntas) ? req.body.preguntas : [];
-  if (preguntas.length !== 5) {
-    return res.status(400).json({ error: 'Se requieren exactamente 5 preguntas' });
+  if (preguntas.length !== session.num_preguntas) {
+    return res.status(400).json({ error: `Se requieren exactamente ${session.num_preguntas} preguntas` });
   }
   for (const p of preguntas) {
     if (!p.texto || !Array.isArray(p.opciones) || p.opciones.length !== 4) {

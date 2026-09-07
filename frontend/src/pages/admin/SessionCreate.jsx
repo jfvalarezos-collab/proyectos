@@ -33,12 +33,18 @@ export default function SessionCreate() {
   });
   const [materialTipo, setMaterialTipo] = useState('texto');
   const [materialPayload, setMaterialPayload] = useState({});
-  const [preguntas, setPreguntas] = useState(emptyQuestions());
+  const [numPreguntas, setNumPreguntas] = useState(5);
+  const [preguntas, setPreguntas] = useState(emptyQuestions(5));
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
   function set(field, value) {
     setForm((f) => ({ ...f, [field]: value }));
+  }
+
+  function cambiarNumPreguntas(n) {
+    setNumPreguntas(n);
+    setPreguntas(emptyQuestions(n));
   }
 
   function preguntasValidas() {
@@ -56,13 +62,13 @@ export default function SessionCreate() {
       return;
     }
     if (!preguntasValidas()) {
-      setError('Completa el texto y las 4 opciones de las 5 preguntas');
+      setError(`Completa el texto y las 4 opciones de las ${numPreguntas} preguntas`);
       return;
     }
 
     setSaving(true);
     try {
-      const session = await api.createSession({ ...form, materialTipo, materialPayload });
+      const session = await api.createSession({ ...form, materialTipo, materialPayload, numPreguntas });
       await api.setQuestions(session.id, preguntas);
       navigate(`/admin/sessions/${session.id}`);
     } catch (err) {
@@ -175,7 +181,30 @@ export default function SessionCreate() {
           </section>
 
           <section>
-            <h2 className="text-sm font-medium text-slate-700 mb-2">Quiz (5 preguntas)</h2>
+            <h2 className="text-sm font-medium text-slate-700 mb-2">Quiz ({numPreguntas} preguntas)</h2>
+            <div className="flex gap-3 mb-3">
+              {[5, 10].map((n) => (
+                <label
+                  key={n}
+                  className={`flex-1 flex items-center justify-center gap-2 border rounded-lg px-3 py-2 cursor-pointer text-sm font-medium ${
+                    numPreguntas === n
+                      ? 'border-brand-500 bg-brand-50 text-brand-700'
+                      : 'border-slate-300 text-slate-600'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="numPreguntas"
+                    checked={numPreguntas === n}
+                    onChange={() => cambiarNumPreguntas(n)}
+                  />
+                  {n} preguntas ({n === 10 ? 'mínimo 70% (7/10) para aprobar' : 'mínimo 60% (3/5) para aprobar'})
+                </label>
+              ))}
+            </div>
+            <p className="text-xs text-slate-400 mb-3">
+              Si cambias la cantidad después de haber escrito preguntas, el formulario se reinicia en blanco.
+            </p>
             <QuestionEditor preguntas={preguntas} onChange={setPreguntas} />
           </section>
 

@@ -126,7 +126,7 @@ export default function AttendeeFlow() {
           )}
 
           {step === 'success' && <Success resultado={ultimoResultado} />}
-          {step === 'blocked' && <Blocked />}
+          {step === 'blocked' && <Blocked totalPreguntas={session.questions.length} />}
         </div>
       </div>
     </div>

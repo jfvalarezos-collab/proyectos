@@ -5,7 +5,12 @@ import db from '../db/db.js';
 const router = Router({ mergeParams: true });
 
 const MAX_INTENTOS = 3;
-const APROBACION_MINIMA = 0.6;
+
+// Las únicas dos modalidades soportadas: 5 preguntas (mínimo 3 correctas, 60%) o
+// 10 preguntas (mínimo 7 correctas, 70%).
+function minimoCorrectas(totalPreguntas) {
+  return totalPreguntas === 10 ? 7 : 3;
+}
 
 function attemptsFor(sessionId, participantToken) {
   return db
@@ -60,15 +65,20 @@ router.post('/attempt', (req, res) => {
   const questions = db
     .prepare('SELECT * FROM questions WHERE session_id = ? ORDER BY orden')
     .all(session.id);
-  if (questions.length !== 5 || respuestas.length !== 5) {
-    return res.status(400).json({ error: 'Se esperan 5 respuestas' });
+  // Candado defensivo: la sesión solo debería tener 5 o 10 preguntas (lo garantiza
+  // questions.routes.js al guardar), esto solo cubre datos corruptos/inesperados.
+  if (![5, 10].includes(questions.length)) {
+    return res.status(500).json({ error: 'La sesión tiene una configuración de preguntas inválida' });
+  }
+  if (respuestas.length !== questions.length) {
+    return res.status(400).json({ error: `Se esperan ${questions.length} respuestas` });
   }
 
   const aciertos = questions.reduce(
     (acc, q, i) => acc + (Number(respuestas[i]) === q.respuesta_correcta ? 1 : 0),
     0
   );
-  const aprobado = aciertos / questions.length >= APROBACION_MINIMA;
+  const aprobado = aciertos >= minimoCorrectas(questions.length);
   const intentoNumero = previousAttempts.length + 1;
 
   db.prepare(

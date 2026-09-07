@@ -180,8 +180,12 @@ export async function buildAsistenciaWorkbook({ session, questions, attendees })
   row += 1;
   ws.mergeCells(`A${row}:AA${row}`);
   ws.getRow(row).height = 60;
+  // El umbral de aprobación depende de la modalidad de la sesión: 5 preguntas (≥3, 60%)
+  // o 10 preguntas (≥7, 70%). Ver la misma regla en quiz.routes.js.
+  const minimoCorrectas = session.num_preguntas === 10 ? 7 : 3;
+  const umbralPct = session.num_preguntas === 10 ? 70 : 60;
   const evaluacionResumen = attendees.length
-    ? `Evaluación: ${attendees.filter((a) => a.aciertos_aprobados >= 3).length}/${attendees.length} asistentes aprobaron (≥60%).`
+    ? `Evaluación: ${attendees.filter((a) => a.aciertos_aprobados >= minimoCorrectas).length}/${attendees.length} asistentes aprobaron (≥${umbralPct}%).`
     : 'Evaluación: sin registros aún.';
   ws.getCell(`A${row}`).value =
     `Material utilizado: ${MATERIAL_LABELS[session.material_tipo] || session.material_tipo}` +
