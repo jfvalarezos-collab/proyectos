@@ -18,7 +18,7 @@ archivo `G-TH-SST 9.00 Registro de Asistencia a Capacitación.xlsx` que está en
 
 ## Link público (para los trabajadores)
 
-**https://specifies-tent-pavilion-postal.trycloudflare.com**
+**https://successfully-librarian-handed-projection.trycloudflare.com**
 
 Ese es el link/dominio que deben usar los QR y el botón de WhatsApp. Es gratis y no expira, pero
 **depende de que esta computadora esté encendida, conectada a internet, y con estos dos programas
@@ -39,7 +39,7 @@ npm start
 ⚠️ **Importante:** si reinicias el túnel (cierras y vuelves a abrir la Terminal 2), Cloudflare te
 dará una **URL nueva y distinta** cada vez (algo como `https://otras-palabras-random.trycloudflare.com`),
 y tendrás que actualizar `PUBLIC_BASE_URL` en `backend/.env` con esa nueva URL y volver a generar
-los QR desde el panel. Mientras no cierres la Terminal 2, la URL actual (`specifies-tent-pavilion-postal.trycloudflare.com`)
+los QR desde el panel. Mientras no cierres la Terminal 2, la URL actual (`successfully-librarian-handed-projection.trycloudflare.com`)
 se mantiene igual. Si esto se vuelve una molestia frecuente, existe la opción de conseguir un
 dominio propio (~$10–15/año) para tener una URL que nunca cambie — avísame si lo quieres y te
 ayudo a configurarlo.
