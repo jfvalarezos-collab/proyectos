@@ -70,12 +70,17 @@ export default function AttendeeFlow() {
   return (
     <div className="min-h-screen bg-slate-50 py-6 px-4">
       <div className="max-w-md mx-auto">
-        <header className="mb-4">
-          <h1 className="text-lg font-semibold text-slate-800">{session.temasTratados || 'Capacitación'}</h1>
-          <p className="text-sm text-slate-500">
-            {session.ciudad} · {session.lugar} · {session.fecha}
-          </p>
-        </header>
+        {/* En la pantalla de firma este encabezado se omite a propósito: le resta espacio
+            vertical justo donde más se necesita (canvas + botones siempre visibles). En el
+            resto de las pantallas del flujo se mantiene igual que antes. */}
+        {step !== 'signature' && (
+          <header className="mb-4">
+            <h1 className="text-lg font-semibold text-slate-800">{session.temasTratados || 'Capacitación'}</h1>
+            <p className="text-sm text-slate-500">
+              {session.ciudad} · {session.lugar} · {session.fecha}
+            </p>
+          </header>
+        )}
 
         <div className="bg-white border border-slate-200 rounded-xl p-4">
           {step === 'content' && (
