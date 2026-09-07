@@ -17,24 +17,73 @@ function useElapsedSeconds() {
   return elapsed;
 }
 
+// Antes el aviso de "debes esperar N segundos" era un texto gris pequeño, fácil de no ver —
+// varios trabajadores se iban de la pantalla pensando que estaba trabada (sobre todo con un
+// video sin URL configurada, que se ve como un recuadro negro sin nada) y como el temporizador
+// vive en el estado del componente, salir/recargar la página lo reinicia desde cero, por lo que
+// el botón de continuar nunca llegaba a aparecer. Ahora el aviso es imposible de no notar.
+function EsperaBadge({ remaining }) {
+  if (remaining <= 0) {
+    return (
+      <p className="text-center text-sm font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg py-2">
+        Contenido visto.
+      </p>
+    );
+  }
+  return (
+    <div className="text-center bg-amber-50 border-2 border-amber-300 rounded-lg py-3 px-3">
+      <p className="text-2xl font-bold text-amber-800 tabular-nums">{remaining}s</p>
+      <p className="text-sm font-medium text-amber-800">
+        No cierres ni recargues esta pantalla — espera aquí para poder continuar
+      </p>
+    </div>
+  );
+}
+
 export default function ContentEmbed({ materialTipo, materialPayload, qrToken, participantToken, onViewed }) {
   const [error, setError] = useState('');
   const completedRef = useRef(false);
 
   useEffect(() => {
-    api.contentStart(qrToken, participantToken).catch((err) => setError(err.message));
+    startWithRetry();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [qrToken, participantToken]);
 
-  async function complete(evidence) {
+  function startWithRetry(attempt = 0) {
+    // Si esta llamada nunca llega a completarse, cada intento posterior de contentComplete
+    // fallará para siempre con "Debes iniciar la visualización primero" (el backend exige
+    // started_at). Se reintenta con el mismo backoff para que no quede huérfano.
+    api
+      .contentStart(qrToken, participantToken)
+      .then(() => setError(''))
+      .catch(() => {
+        const delay = Math.min(30000, 1000 * 2 ** attempt);
+        setTimeout(() => startWithRetry(attempt + 1), delay);
+      });
+  }
+
+  function complete(evidence) {
     if (completedRef.current) return;
     completedRef.current = true;
-    try {
-      await api.contentComplete(qrToken, participantToken, evidence);
-      onViewed();
-    } catch (err) {
-      completedRef.current = false;
-      setError(err.message);
-    }
+    // El botón "Continuar" debe aparecer apenas se cumple la condición de visualización en
+    // esta pantalla (timer, video terminado, diapositivas vistas), sin esperar la respuesta
+    // del backend: si la llamada falla o tarda, el participante no debe quedar bloqueado.
+    // La confirmación al servidor se reintenta en segundo plano (backoff exponencial hasta
+    // 30s) hasta que se registre, ya que el backend exige content_progress.viewed antes de
+    // aceptar el intento de quiz.
+    onViewed();
+    syncComplete(evidence);
+  }
+
+  function syncComplete(evidence, attempt = 0) {
+    api
+      .contentComplete(qrToken, participantToken, evidence)
+      .then(() => setError(''))
+      .catch(() => {
+        setError('No se pudo confirmar con el servidor todavía. Puedes continuar; se reintentará automáticamente.');
+        const delay = Math.min(30000, 1000 * 2 ** attempt);
+        setTimeout(() => syncComplete(evidence, attempt + 1), delay);
+      });
   }
 
   const isYoutube = materialTipo === 'video' && YOUTUBE_RE.test(materialPayload.url || '');
@@ -50,7 +99,10 @@ export default function ContentEmbed({ materialTipo, materialPayload, qrToken, p
       {materialTipo === 'texto' && (
         <TextoViewer payload={materialPayload} onReady={(evidence) => complete(evidence)} />
       )}
-      {materialTipo === 'imagenes' && (
+      {materialTipo === 'imagenes' && materialPayload.archivoUrl && (
+        <DocumentoTimerViewer payload={materialPayload} onReady={() => complete({})} />
+      )}
+      {materialTipo === 'imagenes' && !materialPayload.archivoUrl && (
         <ImagenesViewer payload={materialPayload} onReady={(evidence) => complete(evidence)} />
       )}
       {error && <p className="text-sm text-red-600 mt-2">{error}</p>}
@@ -123,45 +175,24 @@ function VideoTimerViewer({ payload, onReady }) {
           allow="autoplay; fullscreen"
         />
       </div>
-      <p className="text-sm text-slate-500">
-        {remaining > 0
-          ? `Debes permanecer en esta pantalla ${remaining}s más antes de poder continuar.`
-          : 'Contenido visualizado. Ya puedes continuar.'}
-      </p>
+      <EsperaBadge remaining={remaining} />
     </div>
   );
 }
 
 function TextoViewer({ payload, onReady }) {
   const elapsed = useElapsedSeconds();
-  const [scrolledToEnd, setScrolledToEnd] = useState(!payload.texto);
-  const scrollRef = useRef(null);
   const requiredSeconds = payload.texto ? minDwellSecondsForTexto(payload.texto) : 30;
-  const ready = scrolledToEnd && elapsed >= requiredSeconds;
-
-  function checkScrolled(el) {
-    // Si el texto cabe completo sin necesitar scroll (textos cortos, o pantallas altas),
-    // no existe ningún gesto de scroll que el usuario pueda hacer — scrollHeight es igual
-    // a clientHeight y el evento "scroll" nunca se dispara. En ese caso ya se ve el 100%
-    // del contenido de entrada, así que se da por leído de una vez.
-    if (el.scrollHeight - el.clientHeight <= 20 || el.scrollTop + el.clientHeight >= el.scrollHeight - 20) {
-      setScrolledToEnd(true);
-    }
-  }
-
-  function onScroll(e) {
-    checkScrolled(e.target);
-  }
+  // El control real es el tiempo mínimo de permanencia, validado también en el backend.
+  // Antes esto además exigía detectar scroll hasta el final, lo que en celular fallaba seguido
+  // (contenedores cortos, zoom, documentos embebidos) y encima mostraba un botón interno propio
+  // ("Ya terminé de ver...") que duplicaba al botón grande de ContentView un paso más abajo —
+  // el trabajador hacía clic ahí y no entendía por qué tenía que volver a hacer clic en otro
+  // botón casi idéntico. Ahora solo existe UN punto de continuación, en ContentView.
+  const ready = elapsed >= requiredSeconds;
 
   useEffect(() => {
-    if (scrollRef.current) checkScrolled(scrollRef.current);
-    // Reintento breve por si el layout cambia después del primer render (fuentes, wrap).
-    const id = setTimeout(() => scrollRef.current && checkScrolled(scrollRef.current), 300);
-    return () => clearTimeout(id);
-  }, []);
-
-  useEffect(() => {
-    if (ready) onReady({ scrolledToEnd: true });
+    if (ready) onReady({});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready]);
 
@@ -171,22 +202,39 @@ function TextoViewer({ payload, onReady }) {
         <iframe src={payload.archivoUrl} title="Documento" className="w-full h-96 border rounded-lg" />
       )}
       {payload.texto && (
-        <div
-          ref={scrollRef}
-          onScroll={onScroll}
-          className="h-64 overflow-y-auto border border-slate-300 rounded-lg p-4 whitespace-pre-wrap text-sm text-slate-700"
-        >
+        <div className="h-64 overflow-y-auto border border-slate-300 rounded-lg p-4 whitespace-pre-wrap text-sm text-slate-700">
           {payload.texto}
         </div>
       )}
-      <p className="text-sm text-slate-500">
-        {ready
-          ? 'Contenido leído. Ya puedes continuar.'
-          : `Lee hasta el final${payload.texto ? ' (desplázate hasta abajo)' : ''}. Tiempo restante estimado: ${Math.max(
-              0,
-              requiredSeconds - elapsed
-            )}s.`}
-      </p>
+      <EsperaBadge remaining={Math.max(0, requiredSeconds - elapsed)} />
+    </div>
+  );
+}
+
+const VIDEO_FILE_RE = /\.(mp4|wmv|mov|avi)$/i;
+
+function DocumentoTimerViewer({ payload, onReady }) {
+  const elapsed = useElapsedSeconds();
+  const requiredSeconds = Math.max(10, (Number(payload.duracionEstimadaMin) || 1) * 60 - 5);
+  const remaining = Math.max(0, requiredSeconds - elapsed);
+  const ready = remaining === 0;
+  const esVideo = VIDEO_FILE_RE.test(payload.archivoUrl || '');
+
+  useEffect(() => {
+    if (ready) onReady();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready]);
+
+  return (
+    <div className="space-y-3">
+      {esVideo ? (
+        // Un <iframe> apuntando directo a un archivo de video no se reproduce de forma
+        // confiable en todos los navegadores/celulares — un <video> nativo sí.
+        <video src={payload.archivoUrl} controls className="w-full rounded-lg border bg-black" />
+      ) : (
+        <iframe src={payload.archivoUrl} title="Presentación" className="w-full h-96 border rounded-lg" />
+      )}
+      <EsperaBadge remaining={remaining} />
     </div>
   );
 }

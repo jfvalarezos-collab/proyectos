@@ -66,7 +66,16 @@ router.post('/complete', (req, res) => {
     const requiredSeconds = Math.max(10, (Number(payload.duracionEstimadaMin) || 1) * 60 - 5);
     ok = elapsedSeconds >= requiredSeconds;
   } else if (session.material_tipo === 'texto') {
-    ok = !!evidence?.scrolledToEnd && elapsedSeconds >= minDwellSecondsForTexto(payload.texto);
+    // El scroll hasta el final no se exige: en móvil no es detectable de forma confiable
+    // (contenedores que no desbordan, zoom, PDF embebido) y dejaba al trabajador sin poder
+    // avanzar. El tiempo mínimo de permanencia sigue siendo el control real, verificado acá
+    // contra started_at y no contra lo que reporte el navegador.
+    ok = elapsedSeconds >= minDwellSecondsForTexto(payload.texto);
+  } else if (session.material_tipo === 'imagenes' && payload.archivoUrl) {
+    // Presentación subida como archivo (.pptx convertido a PDF, o PDF directo): se controla
+    // igual que un video/enlace, por tiempo mínimo, no por evidencia de diapositivas.
+    const requiredSeconds = Math.max(10, (Number(payload.duracionEstimadaMin) || 1) * 60 - 5);
+    ok = elapsedSeconds >= requiredSeconds;
   } else if (session.material_tipo === 'imagenes') {
     const slideCount = Array.isArray(payload.imagenes) ? payload.imagenes.length : 0;
     const segundosPorSlide = Number(payload.segundosPorDiapositiva) || 3;
