@@ -34,7 +34,8 @@ RUN cd backend && npm ci --omit=dev
 COPY backend/ ./backend/
 COPY --from=frontend-build /app/frontend/dist ./frontend/dist
 
-# backend/data (SQLite) y backend/uploads (archivos subidos) deben montarse como volúmenes
-# persistentes en estas rutas del contenedor — ver plan de migración a Railway.
+# Railway solo permite un volumen persistente por servicio: hay que montarlo en la ruta
+# que apunte la variable de entorno STORAGE_DIR (ver backend/src/config/storage.js), que
+# adentro va a contener las subcarpetas data/ (SQLite) y uploads/ (archivos subidos).
 EXPOSE 3001
 CMD ["node", "backend/src/server.js"]

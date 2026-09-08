@@ -2,12 +2,9 @@ import { Router } from 'express';
 import multer from 'multer';
 import path from 'node:path';
 import fs from 'node:fs';
-import { fileURLToPath } from 'node:url';
 import { v4 as uuid } from 'uuid';
 import { convertPptxToPdf } from '../services/pptxConvert.service.js';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const uploadsDir = path.join(__dirname, '..', '..', 'uploads');
+import { uploadsDir } from '../config/storage.js';
 
 const ALLOWED = new Set(['.pdf', '.png', '.jpg', '.jpeg', '.webp', '.pptx', '.mp4', '.wmv', '.mov', '.avi']);
 
