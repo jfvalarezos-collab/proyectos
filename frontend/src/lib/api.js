@@ -72,6 +72,7 @@ export const api = {
     request(`/admin/sessions/${id}/questions`, { method: 'PUT', body: { preguntas }, auth: true }),
   uploadFiles: (formData) => request('/admin/uploads', { method: 'POST', body: formData, auth: true, isForm: true }),
   exportSession: (id) => downloadWithAuth(`/admin/sessions/${id}/export`),
+  downloadDatabaseBackup: () => downloadWithAuth('/admin/backup'),
 
   getPublicSession: (token) => request(`/public/sessions/${token}`),
   contentStart: (token, participantToken) =>

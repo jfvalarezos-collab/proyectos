@@ -8,6 +8,7 @@ import authRoutes from './routes/auth.routes.js';
 import sessionsRoutes from './routes/sessions.routes.js';
 import uploadsRoutes from './routes/uploads.routes.js';
 import publicRoutes from './routes/public.routes.js';
+import backupRoutes from './routes/backup.routes.js';
 import { requireAdmin } from './middleware/requireAdmin.js';
 import { uploadsDir } from './config/storage.js';
 
@@ -24,6 +25,7 @@ app.get('/api/health', (req, res) => res.json({ ok: true }));
 app.use('/api/auth', authRoutes);
 app.use('/api/admin/uploads', requireAdmin, uploadsRoutes);
 app.use('/api/admin/sessions', requireAdmin, sessionsRoutes);
+app.use('/api/admin/backup', requireAdmin, backupRoutes);
 app.use('/api/public', publicRoutes);
 
 // Sirve el frontend ya compilado (frontend/dist) en este mismo puerto, para poder
